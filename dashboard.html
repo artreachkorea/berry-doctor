@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BerryDoctor 대시보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;
+  --border:#30363d;--border2:#484f58;
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --berry:#e85d79;--berry-dark:#b5324f;--berry-light:#fce4ec;
+  --green:#3fb950;--green-dark:#238636;
+  --yellow:#d29922;--orange:#f0883e;
+  --blue:#58a6ff;--red:#ff7b72;
+  --radius:8px;--radius-lg:12px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;padding:0}
+.page{max-width:1100px;margin:0 auto;padding:1.5rem 1rem}
+
+/* TOP BAR */
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#e85d79,#3fb950);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.logo h1{font-family:'Space Mono',monospace;font-size:20px;font-weight:700;color:var(--text)}
+.logo span{font-size:11px;color:var(--text2);display:block}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:12px;border:1px solid var(--border2);color:var(--text2)}
+.badge.live .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;position:relative;overflow:hidden}
+.mc::after{content:'';position:absolute;top:-10px;right:-10px;width:50px;height:50px;border-radius:50%;opacity:.1}
+.mc-temp::after{background:#ff7b72}.mc-humi::after{background:#58a6ff}.mc-co2::after{background:#3fb950}.mc-light::after{background:#d29922}
+.mc-label{font-size:11px;color:var(--text2);margin-bottom:6px}
+.mc-val{font-family:'Space Mono',monospace;font-size:24px;font-weight:700;color:var(--text);line-height:1}
+.mc-unit{font-size:12px;font-weight:400;color:var(--text2)}
+.mc-sub{font-size:11px;margin-top:5px}
+.ok{color:var(--green)}.warn{color:var(--yellow)}.danger{color:var(--orange)}
+
+/* GRID LAYOUTS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1.25rem}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem}
+.card-title{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:.85rem;display:flex;align-items:center;justify-content:space-between;text-transform:uppercase;letter-spacing:.05em}
+.cbadge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500;text-transform:none;letter-spacing:0}
+.cbadge-warn{background:#3d2b00;color:var(--yellow)}.cbadge-ok{background:#0f2d18;color:var(--green)}.cbadge-ai{background:#1a1b3a;color:var(--blue)}
+
+/* DISEASE BARS */
+.disease-list{display:flex;flex-direction:column;gap:7px}
+.di{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--radius);background:var(--bg3)}
+.di-name{font-size:12px;color:var(--text);min-width:72px}
+.di-wrap{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.di-bar{height:100%;border-radius:3px;transition:width 1s ease}
+.di-safe{background:var(--green)}.di-mid{background:var(--yellow)}.di-high{background:var(--berry)}
+.di-pct{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;min-width:32px;text-align:right;color:var(--text)}
+
+/* TASKS */
+.task-list{display:flex;flex-direction:column;gap:5px}
+.task{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;transition:background .15s;font-size:13px;color:var(--text)}
+.task:hover{background:var(--bg3)}
+.tck{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:10px}
+.tck.done{background:var(--green-dark);border-color:var(--green-dark);color:#fff}
+.ttag{font-size:10px;padding:2px 7px;border-radius:8px;margin-left:auto;flex-shrink:0}
+.ttag-urgent{background:#3d0f0f;color:var(--red)}.ttag-routine{background:#0f2d18;color:var(--green)}.ttag-alert{background:#3d2b00;color:var(--yellow)}
+
+/* WEATHER */
+.w-main{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.w-temp{font-family:'Space Mono',monospace;font-size:32px;font-weight:700;color:var(--text)}
+.w-side{text-align:right;font-size:11px;color:var(--text2);line-height:1.8}
+.frost-warn{background:#2d1f00;border:1px solid #6e4700;border-radius:var(--radius);padding:7px 11px;font-size:12px;color:var(--yellow);margin-top:.75rem;display:flex;align-items:center;gap:6px}
+.forecast{display:flex;gap:6px;margin-top:.75rem}
+.fc{flex:1;text-align:center;padding:6px 4px;border-radius:var(--radius);background:var(--bg3)}
+.fc-d{font-size:10px;color:var(--text3);margin-bottom:3px}
+.fc-i{font-size:15px;margin-bottom:2px}
+.fc-t{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--text)}
+
+/* HARVEST */
+.h-num{font-family:'Space Mono',monospace;font-size:36px;font-weight:700;color:var(--text);line-height:1}
+.h-unit{font-size:14px;color:var(--text2)}
+.h-sub{font-size:11px;color:var(--text2);margin-bottom:.75rem}
+.mini-bars{display:flex;align-items:flex-end;gap:4px;height:52px;margin-bottom:16px}
+.mb{flex:1;background:var(--bg3);border-radius:2px 2px 0 0;position:relative;transition:background .2s}
+.mb.today{background:var(--berry)}
+.mb span{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--text3);white-space:nowrap}
+.h-footer{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);padding-top:.5rem;border-top:1px solid var(--border);margin-top:.25rem}
+
+/* MARKET */
+.mkt-list{display:flex;flex-direction:column;gap:6px}
+.mkt{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:var(--radius);background:var(--bg3);font-size:12px}
+.mkt-n{color:var(--text2)}
+.mkt-p{font-family:'Space Mono',monospace;font-weight:700;font-size:13px;color:var(--text)}
+.mkt-c{font-size:11px;padding:2px 6px;border-radius:8px}
+.cup{background:#3d0f0f;color:var(--red)}.cdn{background:#0f2d18;color:var(--green)}
+
+/* KAKAO */
+.kakao-wrap{background:#FEE500;border-radius:var(--radius-lg);padding:1rem 1.25rem}
+.kakao-hdr{font-size:13px;font-weight:700;color:#1E1E1E;margin-bottom:.75rem;display:flex;align-items:center;gap:6px}
+.bubble{background:#fff;border-radius:0 10px 10px 10px;padding:8px 12px;font-size:12px;color:#333;margin-bottom:6px;max-width:85%;line-height:1.5;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.bubble.out{background:#c8b400;border-radius:10px 0 10px 10px;margin-left:auto;color:#1E1E1E}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:.75rem}
+.chip{font-size:11px;padding:4px 10px;border-radius:12px;background:#fff;color:#333;border:1px solid rgba(0,0,0,.15);cursor:pointer;transition:all .15s;font-weight:500}
+.chip:hover{background:#333;color:#FEE500}
+
+/* TABS & HOUSE CONTROL */
+.tab-bar{display:flex;gap:4px;margin-bottom:.85rem;border-bottom:1px solid var(--border)}
+.tab{padding:5px 12px;font-size:12px;cursor:pointer;border-radius:var(--radius) var(--radius) 0 0;color:var(--text2);border:1px solid transparent;transition:all .2s;user-select:none}
+.tab.active{color:var(--text);background:var(--bg2);border-color:var(--border);border-bottom-color:var(--bg2);font-weight:500}
+.tc{display:none}.tc.active{display:block}
+.house-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:.75rem}
+.hc{border:1px solid var(--border);border-radius:var(--radius);padding:.65rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg3)}
+.hc:hover{border-color:var(--border2)}
+.hc.sel{border-color:var(--berry);background:#1d0a0e}
+.hc-num{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:var(--text)}
+.hc-st{font-size:10px;margin-top:2px}
+.sok{color:var(--green)}.swarn{color:var(--yellow)}.soff{color:var(--text3)}
+.house-info{font-size:12px;color:var(--text2);padding:8px 10px;background:var(--bg3);border-radius:var(--radius)}
+.ctrl-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg3);margin-bottom:7px}
+.ctrl-label{font-size:13px;color:var(--text);font-weight:500}
+.ctrl-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.tog{width:36px;height:20px;border-radius:10px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.tog.on{background:var(--green-dark)}.tog.off{background:var(--border2)}
+.tok{position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tog.on .tok{left:18px}.tog.off .tok{left:2px}
+
+/* ALERT */
+.alert-list{display:flex;flex-direction:column;gap:6px}
+.al{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:var(--radius);font-size:12px}
+.al-warn{background:#1f1500;border-left:3px solid var(--yellow)}
+.al-ok{background:#0a1f0e;border-left:3px solid var(--green)}
+.al-info{background:#0a1220;border-left:3px solid var(--blue)}
+.al-danger{background:#1f0a0a;border-left:3px solid var(--red)}
+.al-ico{font-size:13px;flex-shrink:0;margin-top:1px}
+.al-msg{color:var(--text);line-height:1.4}
+.al-time{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* FOOTER */
+.footer{text-align:center;font-size:11px;color:var(--text3);padding-top:1rem;border-top:1px solid var(--border);margin-top:.5rem}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="top-bar">
+    <div class="logo">
+      <div class="logo-icon">🍓</div>
+      <div>
+        <h1>BerryDoctor</h1>
+        <span>딸기 농장 스마트 관리 시스템 v0.1 — Phase 0 MVP</span>
+      </div>
+    </div>
+    <div class="badges">
+      <div class="badge live"><div class="dot"></div>운영 중</div>
+      <div class="badge">설향 · 강원 홍천</div>
+      <div class="badge" id="clock"></div>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="mc mc-temp">
+      <div class="mc-label">현재 기온</div>
+      <div class="mc-val">18.4<span class="mc-unit">°C</span></div>
+      <div class="mc-sub ok">목표 범위 내 (16–22°C)</div>
+    </div>
+    <div class="mc mc-humi">
+      <div class="mc-label">상대 습도</div>
+      <div class="mc-val">72<span class="mc-unit">%</span></div>
+      <div class="mc-sub warn">▲ 회색곰팡이 주의 구간</div>
+    </div>
+    <div class="mc mc-co2">
+      <div class="mc-label">CO₂ 농도</div>
+      <div class="mc-val">1,240<span class="mc-unit">ppm</span></div>
+      <div class="mc-sub ok">시비 중 (목표 1,200)</div>
+    </div>
+    <div class="mc mc-light">
+      <div class="mc-label">일사량</div>
+      <div class="mc-val">340<span class="mc-unit">W/m²</span></div>
+      <div class="mc-sub ok">오늘 누적 9.2 MJ</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">병해 위험도 진단 <span class="cbadge cbadge-ai">AI 분석</span></div>
+      <div class="disease-list">
+        <div class="di"><span class="di-name">회색곰팡이병</span><div class="di-wrap"><div class="di-bar di-mid" style="width:64%"></div></div><span class="di-pct">64%</span></div>
+        <div class="di"><span class="di-name">흰가루병</span><div class="di-wrap"><div class="di-bar di-safe" style="width:18%"></div></div><span class="di-pct">18%</span></div>
+        <div class="di"><span class="di-name">탄저병</span><div class="di-wrap"><div class="di-bar di-safe" style="width:8%"></div></div><span class="di-pct">8%</span></div>
+        <div class="di"><span class="di-name">역병</span><div class="di-wrap"><div class="di-bar di-safe" style="width:5%"></div></div><span class="di-pct">5%</span></div>
+        <div class="di"><span class="di-name">응애</span><div class="di-wrap"><div class="di-bar di-high" style="width:82%"></div></div><span class="di-pct">82%</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">오늘 할 일 <span class="cbadge cbadge-ok" id="taskBadge">3 / 6 완료</span></div>
+      <div class="task-list" id="taskList">
+        <div class="task" onclick="toggleTask(this)"><div class="tck done">✓</div><span>환기 점검 및 환기창 개도 조정</span><span class="ttag ttag-routine">정기</span></div>
+        <div class="task" onclick="toggleTask(this)"><div class="tck done">✓</div><span>1동 관수 (오전 8시)</span><span class="ttag ttag-routine">정기</span></div>
+        <div class="task" onclick="toggleTask(this)"><div class="tck done">✓</div><span>수확량 기록 입력</span><span class="ttag ttag-routine">정기</span></div>
+        <div class="task" onclick="toggleTask(this)"><div class="tck"></div><span>응애 발생 3동 아바멕틴 살포</span><span class="ttag ttag-urgent">긴급</span></div>
+        <div class="task" onclick="toggleTask(this)"><div class="tck"></div><span>배액 EC/pH 측정 및 기록</span><span class="ttag ttag-routine">정기</span></div>
+        <div class="task" onclick="toggleTask(this)"><div class="tck"></div><span>야간 보온 커튼 점검</span><span class="ttag ttag-alert">날씨</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="card">
+      <div class="card-title">날씨 & 경보</div>
+      <div class="w-main">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:32px">⛅</span>
+          <div>
+            <div class="w-temp">14°C</div>
+            <div style="font-size:11px;color:var(--text2)">강원 홍천 · 구름 조금</div>
+          </div>
+        </div>
+        <div class="w-side">습도 58%<br>풍속 2.1 m/s<br>강수 0 mm</div>
+      </div>
+      <div class="frost-warn">⚠ 내일 새벽 최저 1°C — 동해 경보 예정</div>
+      <div class="forecast">
+        <div class="fc"><div class="fc-d">내일</div><div class="fc-i">🌙</div><div class="fc-t">1°</div></div>
+        <div class="fc"><div class="fc-d">목</div><div class="fc-i">☀</div><div class="fc-t">8°</div></div>
+        <div class="fc"><div class="fc-d">금</div><div class="fc-i">⛅</div><div class="fc-t">11°</div></div>
+        <div class="fc"><div class="fc-d">토</div><div class="fc-i">🌧</div><div class="fc-t">7°</div></div>
+        <div class="fc"><div class="fc-d">일</div><div class="fc-i">⛅</div><div class="fc-t">9°</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">이번 주 수확량</div>
+      <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:4px">
+        <span class="h-num">284</span><span class="h-unit">kg</span>
+      </div>
+      <div class="h-sub">목표 350 kg 대비 81% 달성</div>
+      <div class="mini-bars" id="harvestBars"></div>
+      <div class="h-footer">
+        <span>평균 <b style="color:var(--text);font-family:'Space Mono',monospace">47.3</b> kg/일</span>
+        <span>전주 대비 <b style="color:var(--green)">+12%</b></span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">시세 정보 <span class="cbadge cbadge-ok" style="font-size:9px">가락시장</span></div>
+      <div class="mkt-list">
+        <div class="mkt"><span class="mkt-n">설향 특</span><span class="mkt-p">28,500<small style="font-size:10px;font-weight:400">원/kg</small></span><span class="mkt-c cup">▲ 3.2%</span></div>
+        <div class="mkt"><span class="mkt-n">설향 상</span><span class="mkt-p">21,000<small style="font-size:10px;font-weight:400">원/kg</small></span><span class="mkt-c cdn">▼ 1.1%</span></div>
+        <div class="mkt"><span class="mkt-n">죽향 특</span><span class="mkt-p">34,200<small style="font-size:10px;font-weight:400">원/kg</small></span><span class="mkt-c cup">▲ 0.8%</span></div>
+        <div class="mkt"><span class="mkt-n">킹스베리</span><span class="mkt-p">42,000<small style="font-size:10px;font-weight:400">원/kg</small></span><span class="mkt-c cdn">▼ 2.5%</span></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:.75rem">오전 7시 자동 업데이트</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">카카오톡 연동 현황</div>
+      <div class="kakao-wrap">
+        <div class="kakao-hdr">🟡 BerryDoctor 채널</div>
+        <div class="bubble">사진을 보내주시면 병해를 진단해드립니다 🍓</div>
+        <div class="bubble out">상태</div>
+        <div class="bubble">🌡 현재 기온 18.4°C | 습도 72%<br>⚠ 응애 위험: <b>높음</b> (82%)<br>📋 남은 할일 3가지<br>🌙 내일 새벽 동해 경보 예정</div>
+        <div class="chips">
+          <div class="chip">오늘할일</div>
+          <div class="chip">진단하기</div>
+          <div class="chip">시세</div>
+          <div class="chip">기록 수확 30kg</div>
+          <div class="chip">보조금</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">하우스별 관리</div>
+      <div class="tab-bar">
+        <div class="tab active" onclick="switchTab(this,'overview')">현황</div>
+        <div class="tab" onclick="switchTab(this,'control')">제어</div>
+        <div class="tab" onclick="switchTab(this,'alert')">알림</div>
+      </div>
+      <div class="tc active" id="tc-overview">
+        <div class="house-grid">
+          <div class="hc sel" onclick="selectHouse(this,'1동')"><div class="hc-num">1동</div><div class="hc-st sok">정상 · 18.2°C</div></div>
+          <div class="hc" onclick="selectHouse(this,'2동')"><div class="hc-num">2동</div><div class="hc-st sok">정상 · 18.7°C</div></div>
+          <div class="hc" onclick="selectHouse(this,'3동')"><div class="hc-num">3동</div><div class="hc-st swarn">응애 주의</div></div>
+          <div class="hc" onclick="selectHouse(this,'4동')"><div class="hc-num">4동</div><div class="hc-st sok">정상 · 17.9°C</div></div>
+          <div class="hc" onclick="selectHouse(this,'5동')"><div class="hc-num">5동</div><div class="hc-st soff">센서 없음</div></div>
+          <div class="hc" onclick="selectHouse(this,'6동')"><div class="hc-num">6동</div><div class="hc-st sok">정상 · 18.1°C</div></div>
+        </div>
+        <div class="house-info" id="houseInfo">1동 선택됨 — 오전 8시 관수 완료 · EC 2.1 dS/m · pH 6.1</div>
+      </div>
+      <div class="tc" id="tc-control">
+        <div class="ctrl-row"><div><div class="ctrl-label">환기창</div><div class="ctrl-sub">현재 30% 개도</div></div><div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"><div class="tok"></div></div></div>
+        <div class="ctrl-row"><div><div class="ctrl-label">보온 커튼</div><div class="ctrl-sub">야간 자동 모드</div></div><div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"><div class="tok"></div></div></div>
+        <div class="ctrl-row"><div><div class="ctrl-label">CO₂ 시비기</div><div class="ctrl-sub">목표 1,200 ppm</div></div><div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"><div class="tok"></div></div></div>
+        <div class="ctrl-row"><div><div class="ctrl-label">관수 펌프</div><div class="ctrl-sub">다음 오전 10:00</div></div><div class="tog off" onclick="this.classList.toggle('on');this.classList.toggle('off')"><div class="tok"></div></div></div>
+      </div>
+      <div class="tc" id="tc-alert">
+        <div class="alert-list">
+          <div class="al al-danger"><span class="al-ico">⚠</span><div><div class="al-msg">3동 응애 발생 위험 82% — 즉시 방제 권고</div><div class="al-time">오전 6:47</div></div></div>
+          <div class="al al-warn"><span class="al-ico">🌙</span><div><div class="al-msg">내일 새벽 동해 경보 — 보온 커튼 확인 필요</div><div class="al-time">오전 5:00 (예보)</div></div></div>
+          <div class="al al-info"><span class="al-ico">💧</span><div><div class="al-msg">배액 EC 2.8 dS/m — 정상 범위 상단 접근</div><div class="al-time">어제 오후 5:12</div></div></div>
+          <div class="al al-ok"><span class="al-ico">✓</span><div><div class="al-msg">일일 리포트 카카오 발송 완료</div><div class="al-time">어제 오후 9:00</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    BerryDoctor v0.1 Phase 0 MVP · MIT License · <a href="https://github.com/sinmb79/berry-doctor" style="color:var(--blue);text-decoration:none">GitHub ↗</a>
+  </div>
+</div>
+
+<script>
+const harvestData=[{d:'월',v:38},{d:'화',v:45},{d:'수',v:52},{d:'목',v:41},{d:'금',v:48,today:true},{d:'토',v:32},{d:'일',v:28}];
+const maxV=Math.max(...harvestData.map(x=>x.v));
+const barsEl=document.getElementById('harvestBars');
+harvestData.forEach(item=>{
+  const pct=Math.round(item.v/maxV*100);
+  const bar=document.createElement('div');
+  bar.className='mb'+(item.today?' today':'');
+  bar.style.height=pct+'%';
+  bar.innerHTML=`<span>${item.d}</span>`;
+  bar.title=item.v+'kg';
+  barsEl.appendChild(bar);
+});
+
+function toggleTask(el){
+  const chk=el.querySelector('.tck');
+  chk.classList.toggle('done');
+  chk.textContent=chk.classList.contains('done')?'✓':'';
+  updateBadge();
+}
+function updateBadge(){
+  const done=document.querySelectorAll('.tck.done').length;
+  const total=document.querySelectorAll('.tck').length;
+  document.getElementById('taskBadge').textContent=done+' / '+total+' 완료';
+}
+
+function switchTab(el,id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tc').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tc-'+id).classList.add('active');
+}
+
+const houseMsg={
+  '1동':'1동 선택됨 — 오전 8시 관수 완료 · EC 2.1 dS/m · pH 6.1',
+  '2동':'2동 선택됨 — 정상 운영 중 · 습도 69% · EC 2.0 dS/m',
+  '3동':'3동 선택됨 ⚠ 응애 발생 위험 82% — 아바멕틴 살포 즉시 권고',
+  '4동':'4동 선택됨 — 정상 운영 중 · 습도 71% · EC 1.9 dS/m',
+  '5동':'5동 — 센서 미설치 (Phase 1 확장 예정)',
+  '6동':'6동 선택됨 — 정상 운영 중 · 습도 70% · EC 2.2 dS/m'
+};
+function selectHouse(el,name){
+  document.querySelectorAll('.hc').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('houseInfo').textContent=houseMsg[name]||name;
+}
+
+function updateClock(){
+  const now=new Date();
+  document.getElementById('clock').textContent=now.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+}
+updateClock();setInterval(updateClock,30000);
+</script>
+</body>
+</html>
